@@ -1,6 +1,13 @@
 %pbvs
 clear all
 close all
+
+%world to camera projection
+% >> addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
+% >> addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools\robot
+% >> addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
+% >> startup_rvc
+
 % cam = CentralCamera('default');
 % P = mkgrid( 2, 0.5, 'T', transl(0,0,3) );
 % Tc_unknown = transl(2, 2, -4) * trotz(0.2);

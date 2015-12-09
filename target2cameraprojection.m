@@ -102,3 +102,19 @@ H_C_W_rep = H_T_W * inv(H_T_C);
 disp(H_C_W_rep)
 disp(H_C_W)
 
+%-----------------------------------------------------------------------%
+%pose estimation using rtb
+%given target points in WCS and in CCS
+H_T_C_rtb = cam.estpose(target_T, target_I(1:2,:));
+
+target_C_rtb = H_T_C_rtb * target_T;
+
+
+
+
+
+
+
+
+
+
