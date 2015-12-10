@@ -24,3 +24,9 @@ target_I = cam.projectWorldPts(target.pts_W);
 
 %plot
 plotter = QLPlotter(cam, target);
+
+H_C_W = qlHomTrans(1, 1, 10, 180*pi/180, 0, 0);
+cam.setH_C_W( H_C_W );
+
+H_T_W = qlHomTrans(1, 3, 0, 0, 0, 85*pi/180);   % target position wrt world frame
+target.setH_T_W( H_T_W );

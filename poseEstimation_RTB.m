@@ -1,3 +1,5 @@
+
+
 %poseEstimation from Book Robotics and Computer vision (S.266)
 cam = CentralCamera('focal', 0.015, 'pixel',  10e-6, ...
     'resolution', [1280 1024], 'centre', [640 512]);

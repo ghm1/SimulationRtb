@@ -2,18 +2,24 @@
 classdef QLPlotter < handle
     
     properties (GetAccess = public, SetAccess = private)
-
+        name
+        imgHandle %handle for image plane
+        cam
+        target
     end %properties
     
     %public methods
     methods (Access = public)
         %constructor
         function obj = QLPlotter( camera, target )
+            obj.name = 'Plotter';
             obj.plotCamera(camera);
             obj.plotTarget(target);
+            obj.plotCameraPlane(camera);
+            obj.projectTargetPtsOntoCameraPlane(camera, target);
             %addlistener
-            addlistener(camera, 'PositionChanged', @QLPlotter.updateCameraPosition);
-            addlistener(target, 'PositionChanged', @QLPlotter.updateTargetPosition);
+            addlistener(camera, 'PositionChanged', @(src,evnt)updateCameraPosition(obj,src,evnt));
+            addlistener(target, 'PositionChanged', @(src,evnt)updateTargetPosition(obj,src,evnt));
             
             xlabel('X'); ylabel('Y'); zlabel('Z');
             grid on
@@ -21,23 +27,36 @@ classdef QLPlotter < handle
         end  
     end %public methods
     
-    methods (Static)
-        function updateCameraPosition( src, evtdata )
+    methods %(Static)
+        function updateCameraPosition( obj, src, evtdata )
             set(src.hg, 'Matrix', src.H_C_W);
+            obj.projectTargetPtsOntoCameraPlane(obj.cam, obj.target);
         end %function update updateCameraPosition   
         
-        function updateTargetPosition( src, evtdata )
+        function updateTargetPosition( obj, src, evtdata )
             set(src.hg, 'Matrix', src.H_T_W);
+            obj.projectTargetPtsOntoCameraPlane(obj.cam, obj.target);
         end %function update updateTargetPosition   
         
     end % end static methods
     
     %private methods
     methods (Access = private)
-        
+        function projectTargetPtsOntoCameraPlane(obj, camera, target)
+            hold on
+            arglist = {'Marker', 'o', 'MarkerFaceColor', 'k', 'LineStyle', 'none'};
+            pts = camera.projectWorldPts(target.pts_W);
+            pts = pts(1:2,:);
+            
+            plot(pts(1,:,1), pts(2,:,1), arglist{:}, 'Parent', obj.imgHandle);
+
+            hold off
+        end
+            
         function plotTarget( obj, target ) 
             if( isa(target,'QLTarget') )
                 hold on;
+                obj.target = target;
                 %plot target frame
                 hg = obj.drawTarget(target);
                 %set target transformation
@@ -51,7 +70,8 @@ classdef QLPlotter < handle
         
         function plotCamera( obj, cam )
             if( isa(cam,'QLPerspectiveCamera') )
-                hold on;               
+                hold on;          
+                obj.cam = cam;
                 %draw camera housing and frame
                 hg = obj.drawCamera(cam);
                 %set camera transformation
@@ -63,6 +83,34 @@ classdef QLPlotter < handle
             end        
             
         end % function plotCamera
+        
+        function plotCameraPlane(obj, cam)
+            figure
+            obj.imgHandle = axes;
+            fig = get(obj.imgHandle, 'Parent');
+            disp('make axes');
+            axis square
+            set(fig, 'MenuBar', 'none');
+            set(fig, 'Tag', 'camera');
+            set(obj.imgHandle, 'Color', [1 1 0.8]);
+            set(fig, 'HandleVisibility', 'off');
+            set(fig, 'name', [class(cam) ':' cam.name]);
+            
+            % create an axis for camera view
+            limits = [0 cam.sensorSize(1) 0 cam.sensorSize(2)];
+            set(obj.imgHandle, 'XLim', limits(1:2), 'YLim', limits(3:4), ...
+                'DataAspectRatio', [1 1 1], ...
+                'Xgrid', 'on', 'Ygrid', 'on', ...
+                'Ydir' , 'reverse', ...
+                'NextPlot', 'add', ...
+                'Tag', obj.name ...
+            );
+        
+            xlabel(obj.imgHandle, 'u (pixels)');
+            ylabel(obj.imgHandle, 'v (pixels)');
+            figure( fig );   % raise the camera view
+            set(obj.imgHandle, 'NextPlot', 'replacechildren');
+        end
         
         function hg = drawTarget(obj, target)
             
