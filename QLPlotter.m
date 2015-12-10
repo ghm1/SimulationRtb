@@ -25,6 +25,11 @@ classdef QLPlotter < handle
             grid on
             axis square
         end  
+        
+        %destructor
+        function delete(obj)
+        end %end destructor
+        
     end %public methods
     
     methods %(Static)
@@ -88,7 +93,6 @@ classdef QLPlotter < handle
             figure
             obj.imgHandle = axes;
             fig = get(obj.imgHandle, 'Parent');
-            disp('make axes');
             axis square
             set(fig, 'MenuBar', 'none');
             set(fig, 'Tag', 'camera');

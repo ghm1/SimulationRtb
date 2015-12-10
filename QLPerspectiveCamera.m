@@ -14,7 +14,14 @@ classdef QLPerspectiveCamera < handle
         
         hg %graphics handle
         
+        poseEst        %pose estimation object
+        H_C_W_est      %estimated position of camera in WCS
+        
     end %properties
+    
+    properties (Access = private)
+    	poseEstMethods %pose estimation methods
+    end %private properties
     
     methods
         %constructor
@@ -33,7 +40,35 @@ classdef QLPerspectiveCamera < handle
                    
             %init default position
             obj.setH_C_W(homogeniousTransform([0; 0; 0], 0, 0, 0));
+            
+            obj.poseEstMethods = {'DLT', 'DLT_GN', 'EPnP', 'EPnP_GN', 'Std'};
+            obj.poseEst = QLPoseEstimation();
         end %function QLPerspectiveCamera
+        
+        function H_C_W = estimatePose( obj, target, method, noiseSigma )
+            
+            %project target onto img plane
+            pts_I = obj.projectWorldPts( target.pts_W );
+            %add some noise
+            N = length( pts_I(1,:));
+            pts_I(1:2,:) = pts_I(1:2,:) + noiseSigma*randn(2,N); 
+            
+            if method == char(obj.poseEstMethods(1))      %'DLT'
+                obj.H_C_W_est = obj.poseEst.estPoseDLT(obj.K, target.pts_W, pts_I );
+            elseif method == char(obj.poseEstMethods(2))  %'DLT_GN'
+            elseif method == char(obj.poseEstMethods(3))  %'EPnP'
+            elseif method == char(obj.poseEstMethods(4))  %'EPnP_GN'
+            elseif method == char(obj.poseEstMethods(5))
+            else
+                %unknown method
+                disp('unknown method');
+                return;
+            end
+            
+            H_C_W = obj.H_C_W_est;
+            %inform plotter to plot
+            
+        end
         
         %setter H_C_W
         function obj = setH_C_W(obj, new_H_C_W)

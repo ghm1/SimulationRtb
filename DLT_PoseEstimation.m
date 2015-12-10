@@ -28,15 +28,15 @@ tx = 0; ty = 0; tz = 6;
 Rx = [ 1 0 0; 0 cos(ax) -sin(ax); 0 sin(ax) cos(ax)]; 
 Ry = [ cos(ay) 0 sin(ay); 0 1 0; -sin(ay) 0 cos(ay)]; 
 Rz = [ cos(az) -sin(az) 0; sin(az) cos(az) 0; 0 0 1]; 
-R_m_c = Rz * Ry * Rx; 
-H_m_c = [R_m_c [tx;ty;tz]; 0 0 0 1]; 
-disp('Ground truth pose, model to camera:'); disp(H_m_c); 
+R_w_c = Rz * Ry * Rx; 
+H_w_c = [R_w_c [tx;ty;tz]; 0 0 0 1]; 
+disp('Ground truth pose, model to camera:'); disp(H_w_c); 
   
-H_c_m = inv(H_m_c); 
-disp('Ground truth pose, camera to model:'); disp(H_c_m); 
+H_c_w = inv(H_w_c); 
+disp('Ground truth pose, camera to model:'); disp(H_c_w); 
   
 % Project points onto image 
-Mext = H_m_c(1:3, :);       % Camera extrinsic matrix 
+Mext = H_w_c(1:3, :);       % Camera extrinsic matrix 
 p = K*Mext*P_M; 
 p(1,:) = p(1,:)./p(3,:); 
 p(2,:) = p(2,:)./p(3,:); 
@@ -96,17 +96,13 @@ M = [ x(1)  x(2)  x(3)  x(10);
       x(4)  x(5)  x(6)  x(11); 
       x(7)  x(8)  x(9)  x(12) ]; 
   
-% We can find the camera center, tcorg_m by solving the equation MX=0. 
-% To see this, write M = [R_m_c tmorg_c].  But tmorg_c = -R_m_c * tcorg_m. 
-% So M = R_m_c*[ I  -tcorg_m ].  And if we multiply M times tcorg_m, we 
-% get   R_m_c*[ I  -tcorg_m ] * [tcorg_m; 1] = 0. 
+% We can find the camera center, tcorg_w by solving the equation MX=0. 
+% To see this, write M = [R_w_c tmorg_c].  But tmorg_c = -R_w_c * tcorg_w. 
+% So M = R_w_c*[ I  -tcorg_w ].  And if we multiply M times tcorg_w, we 
+% get   R_w_c*[ I  -tcorg_w ] * [tcorg_w; 1] = 0. 
 [U,D,V] = svd(M); 
-tcorg_m = V(:,end);     % Get last column of V 
-tcorg_m = tcorg_m / tcorg_m(4);     % Divide through by last element  
- [U,D,V] = svd(M); 
-tcorg_m = V(:,end);     % Get last column of V 
-tcorg_m = tcorg_m / tcorg_m(4);     % Divide through by last element 
-
+tcorg_w = V(:,end);     % Get last column of V 
+tcorg_w = tcorg_w / tcorg_w(4);     % Divide through by last element  
 
 % Get rotation portion from M 
 [Q,B] = qr(M(1:3,1:3)'); 
@@ -119,24 +115,24 @@ for i=1:3
     end 
 end 
          
-Restimated_m_c = Q';     % Estimated rotation matrix, model-to-camera 
+Restimated_w_c = Q';     % Estimated rotation matrix, model-to-camera 
   
 % R must be a right handed rotation matrix; ie det(R)>0 
-if det(Restimated_m_c)<0 
-    Restimated_m_c = -Restimated_m_c; 
+if det(Restimated_w_c)<0 
+    Restimated_w_c = -Restimated_w_c; 
 end 
   
 % Final estimated pose 
-Restimated_c_m = Restimated_m_c'; 
-Hestimated_c_m = [Restimated_c_m tcorg_m(1:3); 0 0 0 1]; 
-disp('Final computed pose, H_c_m:'), disp(Hestimated_c_m); 
+Restimated_c_w = Restimated_w_c'; 
+Hestimated_c_w = [Restimated_c_w tcorg_w(1:3); 0 0 0 1]; 
+disp('Final computed pose, H_c_w:'), disp(Hestimated_c_w); 
   
-Hestimated_m_c = inv(Hestimated_c_m); 
-disp('Final computed pose, H_m_c:'), disp(Hestimated_m_c);
+Hestimated_w_c = inv(Hestimated_c_w); 
+disp('Final computed pose, H_w_c:'), disp(Hestimated_w_c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % Reproject points back onto the image 
-M = Hestimated_m_c(1:3,:); 
+M = Hestimated_w_c(1:3,:); 
 p = K*M*P_M; 
 p(1,:) = p(1,:)./p(3,:); 
 p(2,:) = p(2,:)./p(3,:); 

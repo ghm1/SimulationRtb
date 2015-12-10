@@ -6,7 +6,7 @@ function x = poseEstimationNewton(x, target_I, target_T, K)
 %reshape
 y0 = reshape(target_I, [], 1); % reshape into 2Nx1 vector 
 
-for i=1:10 
+for i=1:10
     fprintf('\nIteration %d\nCurrent pose:\n', i); 
     disp(x); 
      
@@ -33,7 +33,7 @@ for i=1:10
     dx = pinv(J) * dy; 
   
     % Stop if parameters are no longer changing 
-    if abs( norm(dx)/norm(x) ) < 1e-6 
+    if abs( norm(dx)/norm(x) ) < 1e-6
         break; 
     end 
   
