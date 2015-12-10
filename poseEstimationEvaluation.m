@@ -23,4 +23,6 @@ target.setH_T_W( H_T_W );
 target_I = cam.projectWorldPts(target.pts_W);
 
 %plot (wcs is on (0,0,0))
-qlPlotFrames( H_C_W, H_T_W );
+plotter = QLPlotter();
+plotter.plotCamera( cam );
+plotter.plotTarget( target );
