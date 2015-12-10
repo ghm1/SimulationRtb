@@ -22,7 +22,5 @@ target.setH_T_W( H_T_W );
 %project target onto cameras image plane
 target_I = cam.projectWorldPts(target.pts_W);
 
-%plot (wcs is on (0,0,0))
-plotter = QLPlotter();
-plotter.plotCamera( cam );
-plotter.plotTarget( target );
+%plot
+plotter = QLPlotter(cam, target);

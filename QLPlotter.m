@@ -1,49 +1,39 @@
 %class that incapsulates plot methods
-classdef QLPlotter
+classdef QLPlotter < handle
     
     properties (GetAccess = public, SetAccess = private)
-        worldFrame  % dimensions of world frame drawing object
-        box % box that surrounds the whole scene
+
     end %properties
     
     %public methods
     methods (Access = public)
         %constructor
-        function obj = QLPlotter()
-            %definition of world frame
-            worldOrigin = [0; 0; 0];
-            worldX = [1; 0; 0];
-            worldY = [0; 1; 0];
-            worldZ = [0; 0; 1];
-            %homogenous world frame
-            obj.worldFrame = [worldOrigin worldX worldY worldZ; ones(1,4)];
-            
-            %update box
-            obj.box = obj.worldFrame * 2;
-            
-            %plot world frame
-            %obj.plotFrame( qlHomTrans(0, 0, 0, 0, 0, 0), 'W');
+        function obj = QLPlotter( camera, target )
+            obj.plotCamera(camera);
+            obj.plotTarget(target);
+            %addlistener
+            addlistener(camera, 'PositionChanged', @QLPlotter.updateCameraPosition);
+            addlistener(target, 'PositionChanged', @QLPlotter.updateTargetPosition);
             
             xlabel('X'); ylabel('Y'); zlabel('Z');
             grid on
-        end
+            axis square
+        end  
+    end %public methods
+    
+    methods (Static)
+        function updateCameraPosition( src, evtdata )
+            set(src.hg, 'Matrix', src.H_C_W);
+        end %function update updateCameraPosition   
         
+        function updateTargetPosition( src, evtdata )
+            set(src.hg, 'Matrix', src.H_T_W);
+        end %function update updateTargetPosition   
         
-        function plotCamera( obj, cam )
-            if( isa(cam,'QLPerspectiveCamera') )
-                hold on;
-               
-                %draw camera housing and frame
-                hg = obj.drawCamera(cam);
-                %set camera transformation
-                set(hg, 'Matrix', cam.H_C_W);
-                
-                hold off;             
-            else
-                disp('This is a plot function for objects of type QLPerspectiveCamera!');
-            end        
-            
-        end % function plotCamera
+    end % end static methods
+    
+    %private methods
+    methods (Access = private)
         
         function plotTarget( obj, target ) 
             if( isa(target,'QLTarget') )
@@ -57,12 +47,22 @@ classdef QLPlotter
             else
                 disp('This is a plot function for objects of type QLTarget!');
             end
-        end % function plotTarget
+        end % function plotTarget        
         
-    end %public methods
-    
-    %private methods
-    methods (Access = private)
+        function plotCamera( obj, cam )
+            if( isa(cam,'QLPerspectiveCamera') )
+                hold on;               
+                %draw camera housing and frame
+                hg = obj.drawCamera(cam);
+                %set camera transformation
+                set( hg, 'Matrix', cam.H_C_W);
+                
+                hold off;             
+            else
+                disp('This is a plot function for objects of type QLPerspectiveCamera!');
+            end        
+            
+        end % function plotCamera
         
         function hg = drawTarget(obj, target)
             
@@ -76,6 +76,7 @@ classdef QLPlotter
             
             % create a new transform group
             hg = hgtransform;
+            target.setGraphicsHandle(hg);
             
             %plot target points
             pts = target.pts_T;
@@ -99,7 +100,7 @@ classdef QLPlotter
         
         function hg = drawCamera(obj, cam)
 
-            opt.color = 'b';
+            opt.color = 'r';
             opt.mode = 'solid';
             opt.label = false;
             opt.scale = 1/3;        
@@ -107,6 +108,7 @@ classdef QLPlotter
 
             % create a new transform group
             hg = hgtransform;
+            cam.setGraphicsHandle(hg);
 
             % the box is centred at the origin and its centerline parallel to the
             % z-axis.  Its z-extent is -bh/2 to bh/2.
@@ -155,7 +157,7 @@ classdef QLPlotter
 
             function h = draw(x, y, z, opt)
 
-                s = opt.scale;
+                %s = opt.scale;
                 switch opt.mode
                 case 'solid'
                     h = surf(x*s,y*s,z*s, 'FaceColor', opt.color);

@@ -12,6 +12,8 @@ classdef QLPerspectiveCamera < handle
         K     % camera Matrix
         Mext  % camera extrinsic
         
+        hg %graphics handle
+        
     end %properties
     
     methods
@@ -38,6 +40,8 @@ classdef QLPerspectiveCamera < handle
             obj.H_C_W = new_H_C_W;
             obj.H_W_C = inv(obj.H_C_W);
             obj.Mext = obj.H_W_C(1:3, :);
+            
+            notify(obj, 'PositionChanged');
         end %function setPositionWCS(H_C_W)
         
         %calculate projection
@@ -48,6 +52,14 @@ classdef QLPerspectiveCamera < handle
             ptsOnImg(3,:) = ptsOnImg(3,:)./ptsOnImg(3,:);
         end %function projectWorldPts
         
+        function obj = setGraphicsHandle(obj, hg)
+            obj.hg = hg;
+        end % function setGraphicsHandle
+        
     end %methods
+    
+    events
+        PositionChanged
+    end
     
 end %class

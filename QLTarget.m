@@ -6,6 +6,8 @@ classdef QLTarget < handle
         H_T_W       %position with respect to wcs
         pts_T    %target points in target cs
         pts_W    %target pointpositions in wcs
+        
+        hg       %graphics handle
     end %properties
     
     methods
@@ -23,8 +25,17 @@ classdef QLTarget < handle
         function obj = setH_T_W(obj, H_T_W)
             obj.H_T_W = H_T_W;
             obj.pts_W = H_T_W *obj.pts_T;
+            
+            notify(obj, 'PositionChanged');
         end %function setH_T_W
         
+        function obj = setGraphicsHandle(obj, hg)
+            obj.hg = hg;
+        end % function setGraphicsHandle
     end %methods
+    
+    events
+        PositionChanged
+    end
     
 end %class
