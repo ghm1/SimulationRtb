@@ -16,7 +16,8 @@ classdef QLPerspectiveCamera < handle
         
         poseEst        %pose estimation object
         H_C_W_est      %estimated position of camera in WCS
-        
+        pts_I_noisy    %noisy projection from position estimation (stored for plotter callback)
+        pts_I_rep %reprojected noisy image points
     end %properties
     
     properties (Access = private)
@@ -40,8 +41,9 @@ classdef QLPerspectiveCamera < handle
                    
             %init default position
             obj.setH_C_W(homogeniousTransform([0; 0; 0], 0, 0, 0));
-            
+            %define poseestimation method names for method call
             obj.poseEstMethods = {'DLT', 'DLT_GN', 'EPnP', 'EPnP_GN', 'Std'};
+            %instantiate pose estimation object
             obj.poseEst = QLPoseEstimation();
         end %function QLPerspectiveCamera
         
@@ -52,22 +54,41 @@ classdef QLPerspectiveCamera < handle
             %add some noise
             N = length( pts_I(1,:));
             pts_I(1:2,:) = pts_I(1:2,:) + noiseSigma*randn(2,N); 
-            
-            if method == char(obj.poseEstMethods(1))      %'DLT'
+            %'DLT'
+            if strcmp( method, char(obj.poseEstMethods(1)))      
                 obj.H_C_W_est = obj.poseEst.estPoseDLT(obj.K, target.pts_W, pts_I );
-            elseif method == char(obj.poseEstMethods(2))  %'DLT_GN'
-            elseif method == char(obj.poseEstMethods(3))  %'EPnP'
-            elseif method == char(obj.poseEstMethods(4))  %'EPnP_GN'
-            elseif method == char(obj.poseEstMethods(5))
+            %'DLT_GN'
+            elseif strcmp( method, char(obj.poseEstMethods(2)))  
+                H_C_W_dlt  = obj.poseEst.estPoseDLT(obj.K, target.pts_W, pts_I );
+                obj.H_C_W_est = obj.poseEst.estPoseGN( obj.K, target.pts_W, pts_I, H_C_W_dlt );
+            %'EPnP'    
+            elseif strcmp( method, char(obj.poseEstMethods(3)))
+                obj.H_C_W_est = obj.poseEst.estPoseEPnP(obj.K, target.pts_W, pts_I );
+            %'EPnP_GN'
+            elseif strcmp(method, char(obj.poseEstMethods(4)))
+                obj.H_C_W_est = obj.poseEst.estPoseEPnP_GN(obj.K, target.pts_W, pts_I );
+            %'Std'
+            elseif strcmp( method, char(obj.poseEstMethods(5)))
             else
                 %unknown method
                 disp('unknown method');
                 return;
             end
             
-            H_C_W = obj.H_C_W_est;
-            %inform plotter to plot
+            %calculate reprojected image points with estimated
+            %transformation
+            H_W_C_est = inv(obj.H_C_W_est);
+            Mext_est = H_W_C_est( 1:3, : );
+            target_I_rep = obj.K * Mext_est * target.pts_W;
+            target_I_rep(1,:) = target_I_rep(1,:) ./ target_I_rep(3,:);
+            target_I_rep(2,:) = target_I_rep(2,:) ./ target_I_rep(3,:);
+            target_I_rep(3,:) = target_I_rep(3,:) ./ target_I_rep(3,:);
+            obj.pts_I_rep = target_I_rep;
             
+            H_C_W = obj.H_C_W_est;
+            obj.pts_I_noisy = pts_I;
+            %inform plotter to plot
+            notify(obj, 'PoseEstimation');
         end
         
         %setter H_C_W
@@ -95,6 +116,7 @@ classdef QLPerspectiveCamera < handle
     
     events
         PositionChanged
+        PoseEstimation
     end
     
 end %class

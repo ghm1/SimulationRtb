@@ -8,6 +8,11 @@ classdef QLPlotter < handle
         target
     end %properties
     
+    properties (Access = private)
+        poseEstOnImgPlane %flag is true, if there is already 
+        hgCam_est      %graphics handle for estimated camera position
+    end
+    
     %public methods
     methods (Access = public)
         %constructor
@@ -17,13 +22,15 @@ classdef QLPlotter < handle
             obj.plotTarget(target);
             obj.plotCameraPlane(camera);
             obj.projectTargetPtsOntoCameraPlane(camera, target);
+            
             %addlistener
             addlistener(camera, 'PositionChanged', @(src,evnt)updateCameraPosition(obj,src,evnt));
+            addlistener(camera, 'PoseEstimation', @(src,evnt)updatePositionEstimationProjection(obj,src,evnt));
             addlistener(target, 'PositionChanged', @(src,evnt)updateTargetPosition(obj,src,evnt));
             
             xlabel('X'); ylabel('Y'); zlabel('Z');
             grid on
-            axis square
+            axis vis3d equal
         end  
         
         %destructor
@@ -36,12 +43,42 @@ classdef QLPlotter < handle
         function updateCameraPosition( obj, src, evtdata )
             set(src.hg, 'Matrix', src.H_C_W);
             obj.projectTargetPtsOntoCameraPlane(obj.cam, obj.target);
+            %remove noisy points
+            
         end %function update updateCameraPosition   
         
         function updateTargetPosition( obj, src, evtdata )
             set(src.hg, 'Matrix', src.H_T_W);
             obj.projectTargetPtsOntoCameraPlane(obj.cam, obj.target);
         end %function update updateTargetPosition   
+        
+        function updatePositionEstimationProjection( obj, src, evtdata )
+            hold on
+            
+            %plot noisy points on image plane
+            pts = src.pts_I_noisy;
+            pts = pts(1:2,:);
+            arglist = {'Marker', '*', 'MarkerFaceColor', 'g', 'LineStyle', 'none', 'Color', 'g' };
+            set(obj.imgHandle, 'NextPlot', 'add');
+            plot(pts(1,:,1), pts(2,:,1), arglist{:}, 'Parent', obj.imgHandle);
+            set(obj.imgHandle, 'NextPlot', 'replacechildren');
+            %plot reprojected points on image plane
+            pts = src.pts_I_rep;
+            pts = pts(1:2,:);
+            arglist = {'Marker', '*', 'MarkerFaceColor', 'g', 'LineStyle', 'none', 'Color', 'r' };
+            set(obj.imgHandle, 'NextPlot', 'add');
+            plot(pts(1,:,1), pts(2,:,1), arglist{:}, 'Parent', obj.imgHandle);
+            set(obj.imgHandle, 'NextPlot', 'replacechildren');              
+            
+            %add reprojected camera
+            if isempty(obj.hgCam_est)
+                %add camera
+                obj.hgCam_est = obj.drawCamera('r');
+            end
+            set(obj.hgCam_est, 'Matrix', src.H_C_W_est);
+            
+            hold off
+        end %function updatePositionEstimationProjection
         
     end % end static methods
     
@@ -78,7 +115,8 @@ classdef QLPlotter < handle
                 hold on;          
                 obj.cam = cam;
                 %draw camera housing and frame
-                hg = obj.drawCamera(cam);
+                hg = obj.drawCamera('b');
+                cam.setGraphicsHandle(hg);
                 %set camera transformation
                 set( hg, 'Matrix', cam.H_C_W);
                 
@@ -122,7 +160,7 @@ classdef QLPlotter < handle
             opt.mode = 'solid';
             opt.label = true;
             opt.scale = 1/3;
-            opt.size = 30;
+            opt.size = 10;
             s = opt.scale;
             a = 3;          % length of axis line segments
             
@@ -150,9 +188,9 @@ classdef QLPlotter < handle
             
         end %function drawTarget
         
-        function hg = drawCamera(obj, cam)
+        function hg = drawCamera(obj, color)
 
-            opt.color = 'r';
+            opt.color = color;
             opt.mode = 'solid';
             opt.label = false;
             opt.scale = 1/3;        
@@ -160,7 +198,6 @@ classdef QLPlotter < handle
 
             % create a new transform group
             hg = hgtransform;
-            cam.setGraphicsHandle(hg);
 
             % the box is centred at the origin and its centerline parallel to the
             % z-axis.  Its z-extent is -bh/2 to bh/2.
@@ -203,9 +240,9 @@ classdef QLPlotter < handle
             plot3([0,0], [0,0], [0,a*s], 'k', 'Parent', hg);
             text(0, 0, a*s, sprintf(' Z'), 'Parent', hg);
 
-            if opt.label
-                text( 0.3*a*s, 0.1*a*s, 0, cam.name, 'Parent', hg);
-            end
+%             if opt.label
+%                 text( 0.3*a*s, 0.1*a*s, 0, cam.name, 'Parent', hg);
+%             end
 
             function h = draw(x, y, z, opt)
 

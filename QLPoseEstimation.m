@@ -10,11 +10,17 @@ classdef QLPoseEstimation
         function obj = QLPoseEstimation(obj)
         end %QLPoseEstimation
         
+        function H_C_W = estPoseEPnP_GN(obj, K, pts_W, pts_I)
+            [R, t] = efficient_pnp_gauss(pts_W', pts_I', K);
+
+            H_C_W = inv([R t; 0 0 0 1]);
+        end %function estPoseEPnP   
+        
         function H_C_W = estPoseEPnP(obj, K, pts_W, pts_I)
             [R, t] = efficient_pnp(pts_W', pts_I', K);
 
             H_C_W = inv([R t; 0 0 0 1]);
-        end %function estPoseEPnP
+        end %function estPoseEPnP       
         
         %position optimization with gauss-newton method
         function H_C_W = estPoseGN(obj, K, pts_W, pts_I, H_C_W_guess)
