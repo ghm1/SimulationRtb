@@ -18,6 +18,8 @@ classdef QLPlotter < handle
         %constructor
         function obj = QLPlotter( camera, target )
             obj.name = 'Plotter';
+            fig = figure;
+            axes_handle = gca;
             obj.plotCamera(camera);
             obj.plotTarget(target);
             obj.plotCameraPlane(camera);
@@ -31,6 +33,24 @@ classdef QLPlotter < handle
             xlabel('X'); ylabel('Y'); zlabel('Z');
             grid on
             axis vis3d equal
+            view(3)
+            %show perspective
+            
+            %todo: arrange figures
+            screen_sz = get(0,'ScreenSize');
+            scn_h = screen_sz(4); scn_w = screen_sz(3);
+            %get image figure
+            figImg = get(obj.imgHandle, 'Parent');
+            figImg_w = 600;
+            figImg_h = 400;
+            figImg_pos = [0 scn_h-figImg_h figImg_w figImg_h];
+            set(figImg,'OuterPosition',figImg_pos);
+            
+            figScene = get(axes_handle, 'Parent');
+            figScene_w = 600;
+            figScene_h = 600;
+            figScene_pos = [0 scn_h-figImg_h-figScene_h figScene_w figScene_h];
+            set(figScene,'OuterPosition',figScene_pos);
         end  
         
         %destructor

@@ -10,6 +10,14 @@ classdef QLPoseEstimation
         function obj = QLPoseEstimation(obj)
         end %QLPoseEstimation
         
+        function H_C_W = estPoseRPP(obj, K, pts_W, pts_I)  
+            %algorithm for planar targets
+            pts_C = inv(K)*pts_I;
+            target_W = pts_W(1:3,:);
+            %model,iprts,opt
+            [pose,po2] = rpp(target_W, pts_C);
+        end %function estPoseRPP
+        
         function H_C_W = estPoseEPnP_GN(obj, K, pts_W, pts_I)
             [R, t] = efficient_pnp_gauss(pts_W', pts_I', K);
 

@@ -42,7 +42,7 @@ classdef QLPerspectiveCamera < handle
             %init default position
             obj.setH_C_W(homogeniousTransform([0; 0; 0], 0, 0, 0));
             %define poseestimation method names for method call
-            obj.poseEstMethods = {'DLT', 'DLT_GN', 'EPnP', 'EPnP_GN', 'Std'};
+            obj.poseEstMethods = {'DLT', 'DLT_GN', 'EPnP', 'EPnP_GN','RPP' ,'Std'};
             %instantiate pose estimation object
             obj.poseEst = QLPoseEstimation();
         end %function QLPerspectiveCamera
@@ -67,6 +67,9 @@ classdef QLPerspectiveCamera < handle
             %'EPnP_GN'
             elseif strcmp(method, char(obj.poseEstMethods(4)))
                 obj.H_C_W_est = obj.poseEst.estPoseEPnP_GN(obj.K, target.pts_W, pts_I );
+            %'RPP'
+            elseif strcmp( method, char(obj.poseEstMethods(5)))
+                obj.H_C_W_est = obj.poseEst.estPoseRPP(obj.K, target.pts_W, pts_I );
             %'Std'
             elseif strcmp( method, char(obj.poseEstMethods(5)))
             else
