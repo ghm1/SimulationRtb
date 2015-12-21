@@ -27,7 +27,7 @@ classdef QLTarget < handle
                 obj.pts_T = target_T;
             else
                 %predefined Targets
-                ptDist = 0.1; % in m
+                ptDist = 1.0; % in m
                 if(opt.targetId == 1)
                     P1 = [0; 0; 0; 1]; P2 = [ptDist; 0; 0; 1]; P3 = [0; ptDist; 0; 1]; ...
                         P4 = [-ptDist; 0; 0; 1];

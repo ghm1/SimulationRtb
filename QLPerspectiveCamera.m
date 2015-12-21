@@ -11,6 +11,7 @@ classdef QLPerspectiveCamera < handle
         H_W_C % wcs wrt ccs
         K     % camera Matrix
         Mext  % camera extrinsic
+        H_C_BFNED
         
         hg %graphics handle
         
@@ -18,6 +19,12 @@ classdef QLPerspectiveCamera < handle
         H_C_W_est      %estimated position of camera in WCS
         pts_I_noisy    %noisy projection from position estimation (stored for plotter callback)
         pts_I_rep %reprojected noisy image points
+        
+        %euler angles with respect to BFNED
+        roll
+        pitch
+        yaw
+        
     end %properties
     
     properties (Access = private)
@@ -39,6 +46,8 @@ classdef QLPerspectiveCamera < handle
                        0   fn  obj.pp(2);
                        0   0   1  ];
                    
+            obj.roll = 0; obj.pitch = 0; obj.yaw = 0;
+                   
             %init default position
             obj.setH_C_W(homogeniousTransform([0; 0; 0], 0, 0, 0));
             %define poseestimation method names for method call
@@ -47,10 +56,16 @@ classdef QLPerspectiveCamera < handle
             obj.poseEst = QLPoseEstimation();
         end %function QLPerspectiveCamera
         
-        function H_C_W = estimatePose( obj, target, method, noiseSigma )
+        function H_C_W = estimatePose( obj, target, method, noiseSigma, mixPts )
             
             %project target onto img plane
             pts_I = obj.projectWorldPts( target.pts_W );
+            
+            %punkte zufällig durchmischen
+            if(mixPts == true)
+                pts_I = obj.doMixPts(pts_I);
+            end
+            
             %add some noise
             N = length( pts_I(1,:));
             pts_I(1:2,:) = pts_I(1:2,:) + noiseSigma*randn(2,N); 
@@ -66,12 +81,16 @@ classdef QLPerspectiveCamera < handle
                 obj.H_C_W_est = obj.poseEst.estPoseEPnP(obj.K, target.pts_W, pts_I );
             %'EPnP_GN'
             elseif strcmp(method, char(obj.poseEstMethods(4)))
-                obj.H_C_W_est = obj.poseEst.estPoseEPnP_GN(obj.K, target.pts_W, pts_I );
+                %obj.H_C_W_est = obj.poseEst.estPoseEPnP_GN(obj.K, target.pts_W, pts_I );
+                H_C_W_epnp = obj.poseEst.estPoseEPnP(obj.K, target.pts_W, pts_I );
+                obj.H_C_W_est = obj.poseEst.estPoseGN( obj.K, target.pts_W, pts_I, H_C_W_epnp );
             %'RPP'
             elseif strcmp( method, char(obj.poseEstMethods(5)))
                 obj.H_C_W_est = obj.poseEst.estPoseRPP(obj.K, target.pts_W, pts_I );
             %'Std'
-            elseif strcmp( method, char(obj.poseEstMethods(5)))
+            elseif strcmp( method, char(obj.poseEstMethods(6)))
+               % roll = 
+                obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, obj.f, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw );
             else
                 %unknown method
                 disp('unknown method');
@@ -114,6 +133,27 @@ classdef QLPerspectiveCamera < handle
         function obj = setGraphicsHandle(obj, hg)
             obj.hg = hg;
         end % function setGraphicsHandle
+        
+        function mixedPts = doMixPts(~, pts)
+            [~,N] = size(pts);                  
+           
+            %exchange S times positions of two pts
+            for k=1 : N
+                %generate two random numbers between 1 and S
+                r = randi(N,1,2);
+                m = pts(:,r(1));
+                pts(:,r(1)) = pts(:,r(2));
+                pts(:,r(2)) = m;
+            end
+            
+            mixedPts = pts;
+        end %end function mixPts
+        
+        function obj = setRPY(obj, roll, pitch, yaw)
+            obj.roll = roll;
+            obj.pitch = pitch;
+            obj.yaw = yaw;
+        end
         
     end %methods
     

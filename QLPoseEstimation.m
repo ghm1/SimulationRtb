@@ -10,12 +10,101 @@ classdef QLPoseEstimation
         function obj = QLPoseEstimation(obj)
         end %QLPoseEstimation
         
+        function H_C_W = estPoseStd(obj, K, f, pts_W, pts_I, roll, pitch, yaw )
+            %homographie
+            R_C2_C1 = rpy2r(roll, pitch, 0);
+            R_C1_C2 = R_C2_C1'; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
+            pts_I2 = K * R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
+            
+            %sort points
+            [L,R,M,F] = obj.sortPts( pts_I2 );
+            
+            %evluate heigth
+            imgDist = eDist(L,R);
+            realDist = eDist(pts_W(1:2,2),pts_W(1:2,4));
+            %height = 
+        end
+        
+        function [L,R,M,F] = sortPts( obj, pts_I2 )
+            %1. calc distances
+            keySet = [[1 2]; [1 3]; [1 4]; [2 3]; [2 4]; [3 4] ];
+            
+            valueSet = [ obj.eSqrdDist( pts_I2(:,1), pts_I2(:,2)),
+                         obj.eSqrdDist( pts_I2(:,1), pts_I2(:,3)),
+                         obj.eSqrdDist( pts_I2(:,1), pts_I2(:,4)),
+                         obj.eSqrdDist( pts_I2(:,2), pts_I2(:,3)),
+                         obj.eSqrdDist( pts_I2(:,2), pts_I2(:,4)),
+                         obj.eSqrdDist( pts_I2(:,3), pts_I2(:,4)),
+                       ];
+             
+             maxI = 1;
+             N = length(valueSet);
+             for k=1 : N
+                 for m=k : N
+                    if valueSet(k) >  valueSet(maxI)
+                        maxI = k;
+                    end
+                 end
+             end
+             
+             %extract points 
+             id = keySet(maxI,:);
+             LR = [ pts_I2(:,id(1)) pts_I2(:,id(2)) ];
+             pts_I2(:,id(1)) = [];
+             pts_I2(:,id(2)-1) = [];
+             
+             %find point with smaller distance to line LR
+             lineLR = LR(:,2) - LR(:,1);
+             %normalize
+             lineLR = lineLR ./ sqrt( lineLR(1)^2 + lineLR(2)^2 );
+             
+             lineP1 = pts_I2(:,1) - LR(:,1);
+             projPt1 = LR(:,1) + dot(lineLR, lineP1) * lineLR;
+             dist1 = obj.eDist(projPt1, pts_I2(:,1));
+             
+             lineP2 = pts_I2(:,2) - LR(:,1);
+             projPt2 = LR(:,1) + dot(lineLR, lineP2) * lineLR;
+             dist2 = obj.eDist(projPt2, pts_I2(:,2));
+             
+             if (dist1 > dist2)
+                 F = pts_I2(:,1);
+                 M = pts_I2(:,2);
+             else
+                 F = pts_I2(:,2);
+                 M = pts_I2(:,1); 
+             end
+             
+             %sort LR to L and R
+             res = (LR(1,1)-M(1,1))*(F(2,1)-M(2,1)) - (LR(2,1)-M(2,1))*(F(1,1)-M(1,1));              
+             if res > 0
+                L = LR(:,1);
+                R = LR(:,2);
+             else
+                R = LR(:,1);
+                L = LR(:,2);
+             end
+        end
+        
+        function dist = eDist(~, P1, P2)
+            dist = P1 - P2;
+            dist = sqrt(dist(1)^2 + dist(2)^2);
+        end
+        
+        function dist = eSqrdDist(~, P1, P2)
+            dist = P1 - P2;
+            dist = dist(1)^2 + dist(2)^2;
+        end
+        
         function H_C_W = estPoseRPP(obj, K, pts_W, pts_I)  
             %algorithm for planar targets
             pts_C = inv(K)*pts_I;
             target_W = pts_W(1:3,:);
             %model,iprts,opt
             [pose,po2] = rpp(target_W, pts_C);
+            
+            H_W_C = [pose.R pose.t; [zeros(1,3) 1]];
+            H_C_W = inv( H_W_C );
         end %function estPoseRPP
         
         function H_C_W = estPoseEPnP_GN(obj, K, pts_W, pts_I)
