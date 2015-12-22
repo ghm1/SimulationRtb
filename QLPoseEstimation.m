@@ -11,16 +11,18 @@ classdef QLPoseEstimation
         end %QLPoseEstimation
         
         function H_C_W = estPoseStd(obj, K, f, rho, pp, pts_W, pts_I, roll, pitch, yaw )
+            %In this case we assume, that we know r,p,y and the
+            %transformation of the target with respect to the world frame (H_T_W) 
             %homographie
-            R_C1_C2 = rpy2r(roll, pitch, 0);
+            R_C_BFNED = rpy2r(roll, pitch, 0);
             %R_C1_C2 = R_C2_C1; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
-            pts_I2 = K * R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            pts_I2 = K * R_C_BFNED / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
             pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
             
             %we first normalize the image coordinates and then rotate the
             %resulting normalized coordinates into an virtual orthogonal
             %camera
-            pts_I2_test = R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            pts_I2_test = R_C_BFNED / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
             pts_I2_test = [ pts_I2_test(1,:) ./ pts_I2_test(3,:); pts_I2_test(2,:) ./ pts_I2_test(3,:) ];
             
             %sort points
@@ -44,11 +46,21 @@ classdef QLPoseEstimation
             %
             pose_xy_test = M_t * height_t;
             
+            %position of target frame in world frame is just the M-point in
+            %the target-world pointset.
+            t_T_LNED = pts_W(1:2,1);
+            dir = pts_W(1:2,3) - pts_W(1:2,1);
+            %rotation of wcs w.r.t. target, that means
+            alpha = atan2(dir(2,1), dir(1,1));
+            R_LNED_T = rotz(alpha);
+            R_T_LNED = rotz(-alpha);
+            H_T_LNED = [ [R_T_LNED; zeros(1,3)] [t_T_LNED; 0; 1] ]
+            
             %translation to the world coordinate system (same as local-NED) from the camera
-            t_LNED_C = [pose_xy(1); pose_xy(1); height];
+            t_T_C = [pose_xy(1); pose_xy(1); height];
             %rotation from the camera to the body-NED frame is the same as
             %to the local-NED frame
-            R_C_LNED = rpy2r(roll, pitch, yaw);
+            R_C_BFNED = rpy2r(roll, pitch, yaw);
             H_LNED_C = [[ R_C_LNED'; zeros(1,3)] [t_LNED_C; 1]];
             H_C_LNED = inv(H_LNED_C);
             %H_C_LNED_test = [ [R_LNED_C'; zeros(1,3)] [(-R_LNED_C * t_LNED_C); 1] ];
