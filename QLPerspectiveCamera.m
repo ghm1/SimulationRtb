@@ -90,7 +90,7 @@ classdef QLPerspectiveCamera < handle
             %'Std'
             elseif strcmp( method, char(obj.poseEstMethods(6)))
                % roll = 
-                obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, obj.f, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw );
+                obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, obj.f, obj.rho, obj.pp, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw );
             else
                 %unknown method
                 disp('unknown method');

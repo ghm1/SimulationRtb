@@ -21,9 +21,9 @@ H_LNED_W = [ 0  1  0  0;
              0  0 -1  0
              0  0  0  1];
          
-H_BFNED_W = [ 0  1  0  0;
-              1  0  0  0
-              0  0 -1  4
+H_BFNED_W = [ 0  1  0  1;
+              1  0  0  1
+              0  0 -1  10
               0  0  0  1];
 
 %add original roll, pitch and yaw to BFNED

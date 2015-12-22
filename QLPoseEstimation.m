@@ -10,20 +10,55 @@ classdef QLPoseEstimation
         function obj = QLPoseEstimation(obj)
         end %QLPoseEstimation
         
-        function H_C_W = estPoseStd(obj, K, f, pts_W, pts_I, roll, pitch, yaw )
+        function H_C_W = estPoseStd(obj, K, f, rho, pp, pts_W, pts_I, roll, pitch, yaw )
             %homographie
             R_C2_C1 = rpy2r(roll, pitch, 0);
             R_C1_C2 = R_C2_C1'; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
             pts_I2 = K * R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
             pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
             
+            %we first normalize the image coordinates and then rotate the
+            %resulting normalized coordinates into an virtual orthogonal
+            %camera
+            pts_I2_test = R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            pts_I2_test = [ pts_I2_test(1,:) ./ pts_I2_test(3,:); pts_I2_test(2,:) ./ pts_I2_test(3,:) ];
+            
             %sort points
             [L,R,M,F] = obj.sortPts( pts_I2 );
+            [L_t,R_t,M_t,F_t] = obj.sortPts( pts_I2_test );
             
             %evluate heigth
-            imgDist = eDist(L,R);
-            realDist = eDist(pts_W(1:2,2),pts_W(1:2,4));
-            %height = 
+            imgDistPix = obj.eDist(L,R);
+            imgDistM = obj.eDist(L,R) * rho;
+            realDist = obj.eDist(pts_W(1:2,2),pts_W(1:2,4));
+            height = (f ./ imgDistM) * realDist;
+            
+            imgDistM_test = obj.eDist(L_t,R_t);
+            height_t = realDist / imgDistM_test;
+            
+            %position:
+            %( imagePt - pp ) * rho / f ist genau
+            Mimg = (M - pp') * rho;
+            pose_xy = (Mimg ./ f) * height;
+            
+            %
+            pose_xy_test = M_t * height_t;
+            
+            %translation to the world coordinate system (same as local-NED) from the camera
+            t_LNED_C = [pose_xy(1); pose_xy(1); height];
+            %rotation from the camera to the body-NED frame is the same as
+            %to the local-NED frame
+            R_LNED_C = rpy2r(roll, pitch, yaw);
+            H_LNED_C = [[ R_LNED_C; zeros(1,3)] [t_LNED_C; 1]];
+            H_C_LNED= inv(H_LNED_C);
+            H_C_LNED_test = [ [R_LNED_C'; zeros(1,3)] [(-R_LNED_C * t_LNED_C); 1] ];
+            H_C_W = H_C_LNED;
+            %rotation: rotation between Line-M-F and x-axis of camera
+            %origin of target coordsystem is on M
+            %we want to calculate rotation of camera/copter w.r.t target
+            %atan2(y,x)
+            %phi = atan2(M(1,2),M(1,1));
+            
         end
         
         function [L,R,M,F] = sortPts( obj, pts_I2 )
