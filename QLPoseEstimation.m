@@ -12,8 +12,8 @@ classdef QLPoseEstimation
         
         function H_C_W = estPoseStd(obj, K, f, rho, pp, pts_W, pts_I, roll, pitch, yaw )
             %homographie
-            R_C2_C1 = rpy2r(roll, pitch, 0);
-            R_C1_C2 = R_C2_C1'; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
+            R_C1_C2 = rpy2r(roll, pitch, 0);
+            %R_C1_C2 = R_C2_C1; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
             pts_I2 = K * R_C1_C2 / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
             pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
             
@@ -48,10 +48,10 @@ classdef QLPoseEstimation
             t_LNED_C = [pose_xy(1); pose_xy(1); height];
             %rotation from the camera to the body-NED frame is the same as
             %to the local-NED frame
-            R_LNED_C = rpy2r(roll, pitch, yaw);
-            H_LNED_C = [[ R_LNED_C; zeros(1,3)] [t_LNED_C; 1]];
-            H_C_LNED= inv(H_LNED_C);
-            H_C_LNED_test = [ [R_LNED_C'; zeros(1,3)] [(-R_LNED_C * t_LNED_C); 1] ];
+            R_C_LNED = rpy2r(roll, pitch, yaw);
+            H_LNED_C = [[ R_C_LNED'; zeros(1,3)] [t_LNED_C; 1]];
+            H_C_LNED = inv(H_LNED_C);
+            %H_C_LNED_test = [ [R_LNED_C'; zeros(1,3)] [(-R_LNED_C * t_LNED_C); 1] ];
             H_C_W = H_C_LNED;
             %rotation: rotation between Line-M-F and x-axis of camera
             %origin of target coordsystem is on M

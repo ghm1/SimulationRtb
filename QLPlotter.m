@@ -11,6 +11,7 @@ classdef QLPlotter < handle
     properties (Access = private)
         poseEstOnImgPlane %flag is true, if there is already 
         hgCam_est      %graphics handle for estimated camera position
+        H_LNED_W
     end
     
     %public methods
@@ -20,8 +21,27 @@ classdef QLPlotter < handle
             obj.name = 'Plotter';
             fig = figure;
             axes_handle = gca;
+%             set(axes_handle, ...
+%                 'DataAspectRatio', [1 1 1], ...
+%                 'Xgrid', 'on', 'Ygrid', 'on', ...
+%                 'Zdir' , 'reverse', ...
+%                 'Ydir' , 'reverse', ...
+%                 'NextPlot', 'add', ...
+%                 'Tag', obj.name ...
+%             );
+            xlabel('X'); ylabel('Y'); zlabel('Z');
+            grid on
+            axis vis3d %equal
+            view(3)
+            
+            obj.H_LNED_W = [ 0  1  0  0;
+                             1  0  0  0
+                             0  0 -1  0
+                             0  0  0  1];
+        
             obj.plotCamera(camera);
             obj.plotTarget(target);
+            obj.plotLocalNEDFrame();
             obj.plotCameraPlane(camera);
             obj.projectTargetPtsOntoCameraPlane(camera, target);
             
@@ -29,14 +49,8 @@ classdef QLPlotter < handle
             addlistener(camera, 'PositionChanged', @(src,evnt)updateCameraPosition(obj,src,evnt));
             addlistener(camera, 'PoseEstimation', @(src,evnt)updatePositionEstimationProjection(obj,src,evnt));
             addlistener(target, 'PositionChanged', @(src,evnt)updateTargetPosition(obj,src,evnt));
-            
-            xlabel('X'); ylabel('Y'); zlabel('Z');
-            grid on
-            axis vis3d equal
-            view(3)
-            %show perspective
-            
-            %todo: arrange figures
+                       
+            %arrange figures
             screen_sz = get(0,'ScreenSize');
             scn_h = screen_sz(4); scn_w = screen_sz(3);
             %get image figure
@@ -113,6 +127,26 @@ classdef QLPlotter < handle
             plot(pts(1,:,1), pts(2,:,1), arglist{:}, 'Parent', obj.imgHandle);
 
             hold off
+        end
+        
+        function plotLocalNEDFrame(obj)
+            %draw LNED frame in cartesian WCS
+            % create a new transform group
+            hold on;
+            hg = hgtransform;     
+
+            a=1; s=1;
+            % draw the x-, y- and z-axes
+            plot3([0,a*s], [0,0], [0,0], 'k', 'Parent', hg);
+            text(a*s, 0, 0, sprintf(' X'), 'Parent', hg);
+            plot3([0,0], [0,a*s], [0,0], 'k', 'Parent', hg);
+            text(0, a*s, 0, sprintf(' Y'), 'Parent', hg);
+            plot3([0,0], [0,0], [0,a*s], 'k', 'Parent', hg);
+            text(0, 0, a*s, sprintf(' Z'), 'Parent', hg);
+            text( 0.1*a*s, 0.1*a*s, 0, 'LNED', 'Parent', hg);
+            %set target transformation
+            set(hg, 'Matrix', obj.H_LNED_W);
+            hold off;
         end
             
         function plotTarget( obj, target ) 
@@ -203,7 +237,7 @@ classdef QLPlotter < handle
             text(0, 0, a*s, sprintf(' Z'), 'Parent', hg);
             
             if opt.label
-                text( 0.3*a*s, 0.1*a*s, 0, target.name, 'Parent', hg);
+                text( 0.1*a*s, 0.1*a*s, 0,'T', 'Parent', hg);
             end
             
         end %function drawTarget
@@ -260,9 +294,7 @@ classdef QLPlotter < handle
             plot3([0,0], [0,0], [0,a*s], 'k', 'Parent', hg);
             text(0, 0, a*s, sprintf(' Z'), 'Parent', hg);
 
-%             if opt.label
-%                 text( 0.3*a*s, 0.1*a*s, 0, cam.name, 'Parent', hg);
-%             end
+            text( 0.3*a*s, 0.3*a*s, 0, 'C', 'Parent', hg);
 
             function h = draw(x, y, z, opt)
 
