@@ -2,7 +2,7 @@
 % addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
 % addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
 % addpath E:\Programme\RVC_toolboxes\contrib\rvctools\contrib\camera_calib
-addpath E:\Programme\RVC_toolboxes\contrib\rvctools\contrib\vgg
+% addpath E:\Programme\RVC_toolboxes\contrib\rvctools\contrib\vgg
 % startup_rvc
 
 clear all

@@ -3,7 +3,8 @@ classdef QLPerspectiveCamera < handle
     
     properties (GetAccess = public, SetAccess = private)
         name  % camera name
-        f     % focal length
+        fx     % focal length
+        fy     % focal length
         rho   % pixel dimensions in m/pixel
         sensorSize % number of pixel 1x2
         pp    % principal point 1x2
@@ -36,14 +37,21 @@ classdef QLPerspectiveCamera < handle
         function obj = QLPerspectiveCamera()
             %init default values
         	obj.name = 'cam';    % camera name
-            obj.f    = 0.015;    % focal length
-            obj.sensorSize = [1280 1024];  % number of pixel 1x2
-            obj.pp = obj.sensorSize/2;      % principal point 1x2
-            obj.rho = 10e-6;
+%             obj.f    = 0.015;    % focal length
+%             obj.sensorSize = [1280 1024];  % number of pixel 1x2
+%             obj.pp = obj.sensorSize/2;      % principal point 1x2
+%             obj.rho = 10e-6;
             
-            fn = obj.f/obj.rho;
-            obj.K = [ fn  0   obj.pp(1);
-                       0   fn  obj.pp(2);
+            obj.fx    = 323.70584;    % focal length
+            obj.fy    = 324.26201;
+            obj.sensorSize = [158.5*2 98.5*2];  % number of pixel 1x2
+            obj.pp = [160.44416 100.75304];      % principal point 1x2
+            obj.rho = 1;
+            
+            fn = [obj.fx/obj.rho obj.fy/obj.rho];
+            
+            obj.K = [ fn(1)  0   obj.pp(1);
+                       0   fn(2)  obj.pp(2);
                        0   0   1  ];
                    
             obj.roll = 0; obj.pitch = 0; obj.yaw = 0;
@@ -90,6 +98,7 @@ classdef QLPerspectiveCamera < handle
             %'Std'
             elseif strcmp( method, char(obj.poseEstMethods(6)))
                % roll = 
+               %fx und fy verwenden
                 obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, obj.f, obj.rho, obj.pp, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw );
             else
                 %unknown method
