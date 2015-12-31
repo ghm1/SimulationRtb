@@ -25,11 +25,11 @@ H_LNED_W = [ 0  1  0  0;
 %position of body-NED frame in local NED frame          
 H_BFNED_LNED = [ 1  0  0  0;
                  0  1  0  0
-                 0  0  1  -10
+                 0  0  1  -5
                  0  0  0  1];
              
 %position of camera in body-NED frame, defined by roll,pitch,yaw angles
-ax = 10; ay = 0; az = 0;
+ax = 0; ay = 0; az = 0;
 % roll: -pi..pi, pitch -pi/2 .. pi, yaw: -pi .. pi
 roll = ax*pi/180; pitch = ay*pi/180; yaw = az*pi/180;
 R_C_BFNED = rotx(roll)*roty(pitch)*rotz(yaw);
@@ -45,7 +45,7 @@ cam.setH_C_W( H_C_W );
 cam.setRPY(roll, pitch, yaw);
 
 %target instance
-H_T_LNED = qlHomTrans(1, 1, 0, 0, 0, 2*pi)   % target position wrt world frame
+H_T_LNED = qlHomTrans(-1.5, -1.0, 0, 0, 0, 2*pi)   % target position wrt world frame
 H_T_W = H_LNED_W * H_T_LNED;
 
 opt.H_T_W = H_T_W;

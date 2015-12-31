@@ -10,41 +10,59 @@ classdef QLPoseEstimation
         function obj = QLPoseEstimation(obj)
         end %QLPoseEstimation
         
-        function H_C_W = estPoseStd(obj, K, f, rho, pp, pts_W, pts_I, roll, pitch, yaw )
+        function H_C_W = estPoseStd(obj, K, pts_W, pts_I, roll, pitch, yaw, p )
             %In this case we assume, that we know r,p,y and the
             %transformation of the target with respect to the world frame (H_T_W) 
             %homographie
             R_C_BFNED = rpy2r(roll, pitch, 0);
             %R_C1_C2 = R_C2_C1; %as the rotationmatix is orthonormal, the transposed is the same as the inverse
-            pts_I2 = K * R_C_BFNED / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
-            pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
+            %pts_I2 = K * R_C_BFNED / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            %pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:) ];
             
             %we first normalize the image coordinates and then rotate the
             %resulting normalized coordinates into an virtual orthogonal
             %camera
-            pts_I2_test = R_C_BFNED / K * pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
-            pts_I2_test = [ pts_I2_test(1,:) ./ pts_I2_test(3,:); pts_I2_test(2,:) ./ pts_I2_test(3,:) ];
+            %intrinsic transform
+            pts_I2 = K \ pts_I; % R_C1_C2 / K  means R_C1_C2 * inv(K)
+            %normalization
+            pts_I2 = [ pts_I2(1,:) ./ pts_I2(3,:); pts_I2(2,:) ./ pts_I2(3,:); pts_I2(3,:) ./ pts_I2(3,:) ];
+            %remove distortion
+            for m=1 : length(pts_I2)
+                x = pts_I2(1,m);
+                y = pts_I2(2,m);
+                %transform to polar coordinates
+                phi = atan2(y,x);
+                r_dist = sqrt(x^2+y^2);
+                r_undist = p(1)*r_dist^3 + p(2)*r_dist^2 + p(3)*r_dist + p(4);
+                x_undist = r_undist * cos(phi);
+                y_undist = r_undist * sin(phi);
+                pts_I2(1,m) = x_undist;
+                pts_I2(2,m) = y_undist;
+            end
+            
+            %extrinsic rotation
+            pts_I2 = R_C_BFNED * pts_I2;
             
             %sort points
+            %[L,R,M,F] = obj.sortPts( pts_I2 );
             [L,R,M,F] = obj.sortPts( pts_I2 );
-            [L_t,R_t,M_t,F_t] = obj.sortPts( pts_I2_test );
             
-            %evluate heigth
-            imgDistPix = obj.eDist(L,R);
-            imgDistM = obj.eDist(L,R) * rho;
+            %evluate height
+            %imgDistPix = obj.eDist(L,R);
+            %imgDistM = obj.eDist(L,R) * rho;
             realDist = obj.eDist(pts_W(1:2,2),pts_W(1:2,4));
-            height = (f ./ imgDistM) * realDist;
+            %height = (f ./ imgDistM) * realDist;
             
-            imgDistM_test = obj.eDist(L_t,R_t);
-            height_t = realDist / imgDistM_test;
+            imgDistM = obj.eDist(L,R);
+            height = realDist / imgDistM;
             
             %position:
             %( imagePt - pp ) * rho / f ist genau
-            Mimg = (M - pp') * rho;
-            pose_xy = (Mimg ./ f) * height;
+            %Mimg = (M - pp') * rho;
+            %pose_xy = (Mimg ./ f) * height;
             
-            %
-            pose_xy_test = M_t * height_t;
+            % M is equal to the shift onto target frame center 
+            pose_xy = M * height;
             
             %position of target frame in world frame is just the M-point in
             %the target-world pointset.
@@ -65,6 +83,7 @@ classdef QLPoseEstimation
             H_C_LNED = inv(H_LNED_C);
             %H_C_LNED_test = [ [R_LNED_C'; zeros(1,3)] [(-R_LNED_C * t_LNED_C); 1] ];
             H_C_W = H_C_LNED;
+            
             %rotation: rotation between Line-M-F and x-axis of camera
             %origin of target coordsystem is on M
             %we want to calculate rotation of camera/copter w.r.t target

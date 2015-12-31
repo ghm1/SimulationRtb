@@ -26,6 +26,16 @@ classdef QLPerspectiveCamera < handle
         pitch
         yaw
         
+        %camera calibration parameter
+        k1
+        k2
+        p1
+        p2
+        k3
+        
+        %undistortion polynom koefficients
+        p
+        
     end %properties
     
     properties (Access = private)
@@ -42,7 +52,7 @@ classdef QLPerspectiveCamera < handle
 %             obj.pp = obj.sensorSize/2;      % principal point 1x2
 %             obj.rho = 10e-6;
             
-            obj.fx    = 323.70584;    % focal length
+            obj.fx    = 323.70584;    % focal length (fx/rho)
             obj.fy    = 324.26201;
             obj.sensorSize = [158.5*2 98.5*2];  % number of pixel 1x2
             obj.pp = [160.44416 100.75304];      % principal point 1x2
@@ -54,6 +64,16 @@ classdef QLPerspectiveCamera < handle
                        0   fn(2)  obj.pp(2);
                        0   0   1  ];
                    
+            %distortion parameter
+            obj.k1 = -0.43772;
+            obj.k2 = 0.25627;
+            obj.p1 = -0.00005;
+            obj.p2 = -0.00102;
+            obj.k3 = 0.0;
+            
+            %undistortion polynom coefficients
+            obj.findUndistortionPolynomCoefficients();
+                   
             obj.roll = 0; obj.pitch = 0; obj.yaw = 0;
                    
             %init default position
@@ -63,6 +83,57 @@ classdef QLPerspectiveCamera < handle
             %instantiate pose estimation object
             obj.poseEst = QLPoseEstimation();
         end %function QLPerspectiveCamera
+        
+        function obj = findUndistortionPolynomCoefficients( obj )
+            %For simplicity we only calculate on the x-axis where y equals
+            %zero. The values and datarange have to be authentic. The approximation only
+            %works on the chosen datarange
+            x = 1:obj.sensorSize(1);    %image width
+            cc = obj.pp(1);             %principal point
+            %we take mean value of normalized focal length (there is not
+            %more we can do)
+            fc = ( obj.fx + obj.fy ) / 2;
+            r_dist = zeros(size(x)); % r distorted
+            r_n = zeros(size(x));    % r normalized coordinates
+
+            for m=1 : length(x)
+                %normalized image coordinates (undistorted)
+                r_n(m) = (x(m)-cc) / fc;
+                %calculate r_dist = f(r_n): this adds distortion to normalized image
+                %coordinates
+                %nomalized image coordinates distorted (for simplicity we only use k1 and k2, this results in an minimal error)
+                r_dist(m) = r_n(m) + obj.k1*r_n(m)^3 + obj.k2*r_n(m)^5;
+            end
+
+%             %functionplot
+%             plot(r_n,r_dist);
+%             hold on 
+%             %plot angle bisector
+%             plot(r_n,r_n, ':k');
+%             %plot of inversed function, this is the function we are searching for
+%             plot(r_dist,r_n, 'color', 'r');
+%             axis equal
+%             grid on
+
+            %approximate r_n by polynomial curve fitting:
+            %this function maps a distorted value to an undistorted one
+            p = polyfit(r_dist,r_n,3);
+            r_undist = zeros(size(x)); %undistorted radius
+            %interpolate x by polynomia approximation
+            %attention: this formular only works on the datarange, that it has been
+            %approximated on!
+            for m=1 : length(x)
+                r_undist(m) = p(1)*r_dist(m)^3 + p(2)*r_dist(m)^2 + p(3)*r_dist(m) + p(4);
+            end
+            
+            %set object member
+            obj.p = p;
+%             %we are getting a straight line which fits the angle bisector, this is what
+%             %we wanted
+%             plot(r_n, r_undist, 'color', 'g');
+
+            
+        end %findUndistortionPolynomCoefficients
         
         function H_C_W = estimatePose( obj, target, method, noiseSigma, mixPts )
             
@@ -97,13 +168,11 @@ classdef QLPerspectiveCamera < handle
                 obj.H_C_W_est = obj.poseEst.estPoseRPP(obj.K, target.pts_W, pts_I );
             %'Std'
             elseif strcmp( method, char(obj.poseEstMethods(6)))
-               % roll = 
-               %fx und fy verwenden
-                obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, obj.f, obj.rho, obj.pp, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw );
+               obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw, obj.p );
             else
-                %unknown method
-                disp('unknown method');
-                return;
+               %unknown method
+               disp('unknown method');
+               return;
             end
             
             %calculate reprojected image points with estimated
@@ -133,10 +202,30 @@ classdef QLPerspectiveCamera < handle
         
         %calculate projection
         function ptsOnImg = projectWorldPts(obj, pts )
-            ptsOnImg = obj.K * obj.Mext * pts;
+            %extrinsic transformation
+            ptsOnImg = obj.Mext * pts;
+
+            %normalize homogenious image coordinates (focal length = 1)
             ptsOnImg(1,:) = ptsOnImg(1,:)./ptsOnImg(3,:);
             ptsOnImg(2,:) = ptsOnImg(2,:)./ptsOnImg(3,:);
             ptsOnImg(3,:) = ptsOnImg(3,:)./ptsOnImg(3,:);
+            
+            %add lens distortion
+            for m=1 : length(ptsOnImg)
+                %transformat
+                r = sqrt( ptsOnImg(1,m)^2 + ptsOnImg(2,m)^2 );
+                x = ptsOnImg(1,m);
+                y = ptsOnImg(2,m);
+                term = 1 + obj.k1*r^2 + obj.k2*r^4 + obj.k3*r^6;
+                xstar = x * term + 2 * obj.p1 * x * y + obj.p2 * (r^2 + 2 * x^2);
+                ystar = y * term + 2 * obj.p2 * x * y + obj.p1 * (r^2 + 2 * y^2);
+                ptsOnImg(1,m) = xstar;
+                ptsOnImg(2,m) = ystar;
+            end
+            
+            %intrinsic transformation
+            ptsOnImg = obj.K * ptsOnImg;
+
         end %function projectWorldPts
         
         function obj = setGraphicsHandle(obj, hg)
