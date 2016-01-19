@@ -71,7 +71,7 @@ target = QLTarget(opt);
 %plot
 plotter = QLPlotter(cam, target);
 %image noise
-sigmaNoise = 0.0;
+sigmaNoise = 1.0;
 %flags if correspondence among points will be mixed
 mixPts = false;
 H_C_W_estStd_new = cam.estimatePose(target, 'Std', sigmaNoise, mixPts);
