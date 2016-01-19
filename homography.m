@@ -3,10 +3,10 @@ clear; % all;
 close all;
 %World to camerasensor transformation
 %world frame is at (0,0,0)
-%addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
-%addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools\robot
-%addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
-%startup_rvc
+% addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
+% addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools\robot
+% addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
+% startup_rvc
 
 %key:
 % H = homogenious transformation

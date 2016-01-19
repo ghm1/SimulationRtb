@@ -59,6 +59,9 @@ r_n = sqrt(x^2+y^2);
 r_dist = r_n + k1*r_n^3 + k2*r_n^5;
 %undistort image with approximated formula
 r_undist = p(1)*r_dist^3 + p(2)*r_dist^2 + p(3)*r_dist + p(4);
+%-> following calculations are simply wrong
+%x_undist_t = p(1)*x^3 + p(2)*x^2 + p(3)*x + p(4);
+%y_undist_t = p(1)*y^3 + p(2)*y^2 + p(3)*y + p(4);
 x_undist = r_undist * cos(phi)
 y_undist = r_undist * sin(phi)
 

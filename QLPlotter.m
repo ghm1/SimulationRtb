@@ -186,7 +186,7 @@ classdef QLPlotter < handle
             obj.imgHandle = axes;
             fig = get(obj.imgHandle, 'Parent');
             axis square
-            set(fig, 'MenuBar', 'none');
+            %set(fig, 'MenuBar', 'none');
             set(fig, 'Tag', 'camera');
             set(obj.imgHandle, 'Color', [1 1 0.8]);
             set(fig, 'HandleVisibility', 'off');
@@ -214,7 +214,7 @@ classdef QLPlotter < handle
             opt.mode = 'solid';
             opt.label = true;
             opt.scale = 1/3;
-            opt.size = 10;
+            opt.size = 30;
             s = opt.scale;
             a = 3;          % length of axis line segments
             

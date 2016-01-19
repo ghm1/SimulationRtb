@@ -35,6 +35,7 @@ classdef QLPerspectiveCamera < handle
         
         %undistortion polynom koefficients
         p
+        distort
         
     end %properties
     
@@ -44,7 +45,7 @@ classdef QLPerspectiveCamera < handle
     
     methods
         %constructor
-        function obj = QLPerspectiveCamera()
+        function obj = QLPerspectiveCamera(distort)
             %init default values
         	obj.name = 'cam';    % camera name
 %             obj.f    = 0.015;    % focal length
@@ -70,6 +71,8 @@ classdef QLPerspectiveCamera < handle
             obj.p1 = -0.00005;
             obj.p2 = -0.00102;
             obj.k3 = 0.0;
+            
+            obj.distort = distort;
             
             %undistortion polynom coefficients
             obj.findUndistortionPolynomCoefficients();
@@ -168,7 +171,7 @@ classdef QLPerspectiveCamera < handle
                 obj.H_C_W_est = obj.poseEst.estPoseRPP(obj.K, target.pts_W, pts_I );
             %'Std'
             elseif strcmp( method, char(obj.poseEstMethods(6)))
-               obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw, obj.p );
+               obj.H_C_W_est = obj.poseEst.estPoseStd(obj.K, target.pts_W, pts_I, obj.roll, obj.pitch, obj.yaw, obj.p, obj.distort );
             else
                %unknown method
                disp('unknown method');
@@ -184,7 +187,7 @@ classdef QLPerspectiveCamera < handle
             target_I_rep(2,:) = target_I_rep(2,:) ./ target_I_rep(3,:);
             target_I_rep(3,:) = target_I_rep(3,:) ./ target_I_rep(3,:);
             obj.pts_I_rep = target_I_rep;
-            
+%hier distortino            
             H_C_W = obj.H_C_W_est;
             obj.pts_I_noisy = pts_I;
             %inform plotter to plot
@@ -210,17 +213,19 @@ classdef QLPerspectiveCamera < handle
             ptsOnImg(2,:) = ptsOnImg(2,:)./ptsOnImg(3,:);
             ptsOnImg(3,:) = ptsOnImg(3,:)./ptsOnImg(3,:);
             
-            %add lens distortion
-            for m=1 : length(ptsOnImg)
-                %transformat
-                r = sqrt( ptsOnImg(1,m)^2 + ptsOnImg(2,m)^2 );
-                x = ptsOnImg(1,m);
-                y = ptsOnImg(2,m);
-                term = 1 + obj.k1*r^2 + obj.k2*r^4 + obj.k3*r^6;
-                xstar = x * term + 2 * obj.p1 * x * y + obj.p2 * (r^2 + 2 * x^2);
-                ystar = y * term + 2 * obj.p2 * x * y + obj.p1 * (r^2 + 2 * y^2);
-                ptsOnImg(1,m) = xstar;
-                ptsOnImg(2,m) = ystar;
+            if obj.distort
+                %add lens distortion
+                for m=1 : length(ptsOnImg)
+                    %transformat
+                    r = sqrt( ptsOnImg(1,m)^2 + ptsOnImg(2,m)^2 );
+                    x = ptsOnImg(1,m);
+                    y = ptsOnImg(2,m);
+                    term = 1 + obj.k1*r^2 + obj.k2*r^4 + obj.k3*r^6;
+                    xstar = x * term + 2 * obj.p1 * x * y + obj.p2 * (r^2 + 2 * x^2);
+                    ystar = y * term + 2 * obj.p2 * x * y + obj.p1 * (r^2 + 2 * y^2);
+                    ptsOnImg(1,m) = xstar;
+                    ptsOnImg(2,m) = ystar;
+                end
             end
             
             %intrinsic transformation
