@@ -15,7 +15,7 @@ classdef QLPoseEstimation
             %transformation of the target with respect to the world frame (H_T_W) 
             
             %add noise to euler angles
-            noiseSigma = 0.00;
+            noiseSigma = 0.02;
             roll_n = roll + noiseSigma*randn(1,1);
             pitch_n = pitch + noiseSigma*randn(1,1);
             yaw_n = yaw + noiseSigma*randn(1,1);
@@ -60,11 +60,17 @@ classdef QLPoseEstimation
             %sort points
             [L,R,M,F] = obj.sortPts( pts_I2 );
             
-            %evluate height
-            realDist = obj.eDist(pts_W(1:2,2),pts_W(1:2,4));
-            
-            imgDistM = obj.eDist(L,R);
-            height = realDist ./ imgDistM;
+%             %distance LR
+%             realDist = obj.eDist(pts_W(1:2,2),pts_W(1:2,4));           
+%             imgDistM = obj.eDist(L,R);
+%             %evluate height
+%             height = realDist ./ imgDistM;
+%             
+            %mean distance LR, LF, RF
+            realDistMean = obj.eDist(pts_W(1:2,2),pts_W(1:2,4)) + 2 * obj.eDist(pts_W(1:2,2),pts_W(1:2,3));
+            imgDistMean = obj.eDist(L,R) + obj.eDist(L,F) + obj.eDist(F,R);
+            %evluate height mean
+            height = realDistMean ./ imgDistMean;
 
             % M is equal to the shift onto target frame center 
             pose_xy = M * height;

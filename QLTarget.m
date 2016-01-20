@@ -27,7 +27,7 @@ classdef QLTarget < handle
                 obj.pts_T = target_T;
             else
                 %predefined Targets
-                ptDist = 1.0; % in m
+                ptDist = 0.25; % in m
                 if(opt.targetId == 1)
                     P1 = [0; 0; 0; 1]; P2 = [ptDist; 0; 0; 1]; P3 = [0; ptDist; 0; 1]; ...
                         P4 = [-ptDist; 0; 0; 1];
@@ -45,6 +45,14 @@ classdef QLTarget < handle
                         P4 = [-6.5; ptDist; 0; 1];  P5 = [3.3; -3.3; 0; 1]; P6 = [-4.2; -2.3; 0; 1];
                     obj.pts_T = [P1 P2 P3 P4 P5 P6];
                 elseif(opt.targetId == 5)
+                        P1 = [0; ptDist; 0; 1]; P2 = [ptDist/2; ptDist; 0; 1]; ...
+                        P3 = [ptDist; ptDist; 0; 1];  P4 = [ptDist/2; ptDist/2; 0; 1]; P5 = [0; ptDist/2; 0; 1]; ...
+                        P6 = [-ptDist; ptDist/2; 0; 1]; P7 = [0; 0; 0; 1]; ...
+                        P8 = [ptDist; 0; 0; 1]; P9 = [ptDist/2; -ptDist/2; 0; 1]; ...
+                        P10 = [-ptDist/2; -ptDist/2; 0; 1];  P11 = [-ptDist; -ptDist/2; 0; 1];  ...
+                        P12 = [-ptDist/2; ptDist; 0; 1];  P13 = [0; -ptDist; 0; 1]; P14 = [ptDist; -ptDist; 0; 1];
+                    obj.pts_T = [P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 P12 P13 P14];
+                elseif(opt.targetId == 6)
                     P1 = [0; 0; 0; 1]; P2 = [ptDist; 0; 0; 1]; P3 = [0; ptDist; 0; 1]; ...
                         P4 = [-ptDist; 0; 0; 1];  P5 = [ptDist; ptDist; 0; 1]; P6 = [-ptDist; ptDist; 0; 1];
                     obj.pts_T = [P1 P2 P3 P4 P5 P6];   
