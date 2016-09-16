@@ -1,6 +1,7 @@
 clear all 
 close all 
-  
+
+% code from william hoff
 IA = imread('book_A.jpg'); 
 IB = imread('book_B.jpg'); 
 figure, imshow(IA,[]); 

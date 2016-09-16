@@ -1,7 +1,8 @@
-%world to camera projection
-% >> addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
-% >> addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
-% >> startup_rvc
+%world to camera projection using Robotic toolbox
+
+addpath ..\RVC_toolboxes\robot-9.10\rvctools
+addpath ..\RVC_toolboxes\vision-3.4\rvctools
+startup_rvc
 
 %definition of camera object with 15mm focal lenght, 1mm pixel size
 cam = CentralCamera('focal', 0.015);

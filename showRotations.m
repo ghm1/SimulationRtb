@@ -1,3 +1,5 @@
+%Demonstration of homogenious transform. Enter rotation and translation as
+%matrices [ax,ay,az] and [X,Y,Z]
 %showRotations.m
 clear all    % It is a good idea to clear the workspace of old variables 
 close all    % This closes any open figures

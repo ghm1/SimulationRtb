@@ -45,35 +45,71 @@ classdef QLPerspectiveCamera < handle
     
     methods
         %constructor
-        function obj = QLPerspectiveCamera(distort)
+        function obj = QLPerspectiveCamera(opt)
             %init default values
-        	obj.name = 'cam';    % camera name
+            if opt.name
+                obj.name = opt.name;
+            else  
+                obj.name = 'cam';    % camera name
+            end
 %             obj.f    = 0.015;    % focal length
 %             obj.sensorSize = [1280 1024];  % number of pixel 1x2
 %             obj.pp = obj.sensorSize/2;      % principal point 1x2
 %             obj.rho = 10e-6;
             
-            obj.fx    = 323.70584;    % focal length (fx/rho)
-            obj.fy    = 324.26201;
-            obj.sensorSize = [158.5*2 98.5*2];  % number of pixel 1x2
-            obj.pp = [160.44416 100.75304];      % principal point 1x2
-            obj.rho = 1;
+            if opt.f
+                obj.fx = opt.f(1);
+                obj.fy = opt.f(2);
+            else
+                obj.fx    = 323.70584;    % focal length
+                obj.fy    = 324.26201;
+            end
+            
+            if opt.sensorSize
+               obj.sensorSize = opt.sensorSize;
+            else
+                obj.sensorSize = [158.5*2 98.5*2];  % number of pixel 1x2
+            end
+            
+            if opt.pp
+                obj.pp = opt.pp;
+            else
+                obj.pp = [160.44416 100.75304];      % principal point 1x2
+            end
+            
+            if opt.rho
+                obj.rho = opt.rho;
+            else
+                obj.rho = 1;
+            end
+            
+            %distortion parameter
+            if opt.k1
+                obj.k1 = opt.k1;
+                obj.k2 = opt.k2;
+                obj.p1 = opt.p1;
+                obj.p2 = opt.p2;
+                obj.k3 = opt.k3;
+            else
+                obj.k1 = -0.43772;
+                obj.k2 = 0.25627;
+                obj.p1 = -0.00005;
+                obj.p2 = -0.00102;
+                obj.k3 = 0.0;
+            end
+            
+            if opt.distort
+                obj.distort = opt.distort;
+            else
+                obj.distort = false;
+            end
             
             fn = [obj.fx/obj.rho obj.fy/obj.rho];
             
             obj.K = [ fn(1)  0   obj.pp(1);
                        0   fn(2)  obj.pp(2);
                        0   0   1  ];
-                   
-            %distortion parameter
-            obj.k1 = -0.43772;
-            obj.k2 = 0.25627;
-            obj.p1 = -0.00005;
-            obj.p2 = -0.00102;
-            obj.k3 = 0.0;
-            
-            obj.distort = distort;
-            
+                                         
             %undistortion polynom coefficients
             obj.findUndistortionPolynomCoefficients();
                    

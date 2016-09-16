@@ -1,3 +1,5 @@
+%An example from William Hoff
+
 clear all 
 close all 
   

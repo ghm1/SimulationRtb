@@ -45,6 +45,7 @@ T = [0;0;10];
 theta = pi;
 Rx = [1 0 0; 0 cos(theta) -sin(theta); 0 sin(theta) cos(theta)];
 H_A_B = [Rx T; 0 0 0 1] %transformation from A to B
+H_B_A = inv(H_A_B);
 P_B = H_B_A * P_A
 
 %world to cam transformation exercise

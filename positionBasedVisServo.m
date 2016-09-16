@@ -3,9 +3,9 @@ clear all
 close all
 
 %world to camera projection
-addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
-addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools\robot
-addpath E:\Programme\RVC_toolboxes\vision-3.4\rvctools
+addpath ..\RVC_toolboxes\robot-9.10\rvctools
+addpath ..\RVC_toolboxes\robot-9.10\rvctools\robot
+addpath ..\RVC_toolboxes\vision-3.4\rvctools
 startup_rvc
 
 % cam = CentralCamera('default');

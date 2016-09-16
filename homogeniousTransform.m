@@ -1,4 +1,5 @@
-function h = homTrans( transl, ax, ay, az)
+function h = homogeniousTransform( transl, ax, ay, az)
+% Build homogenious transformation function
 
 % Rotation matrix, model to camera 
 Rx = [ 1 0 0; 0 cos(ax) -sin(ax); 0 sin(ax) cos(ax)]; 

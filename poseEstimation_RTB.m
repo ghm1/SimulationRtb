@@ -1,4 +1,9 @@
-
+addpath ..\RVC_toolboxes\contrib\rvctools\contrib\EPnP\EPnP
+addpath ..\RVC_toolboxes\robot-9.10\rvctools
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp\util
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp\objpose
+startup_rvc
 
 %poseEstimation from Book Robotics and Computer vision (S.266)
 cam = CentralCamera('focal', 0.015, 'pixel',  10e-6, ...

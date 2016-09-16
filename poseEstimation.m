@@ -1,6 +1,7 @@
 clear all  
 close all 
-  
+ 
+%from william hoff
 I = imread('img1_rect.tif'); 
 imshow(I, []) 
   

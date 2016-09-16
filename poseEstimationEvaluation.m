@@ -4,12 +4,18 @@
 clear
 close all force
 
-% addpath E:\Programme\RVC_toolboxes\contrib\rvctools\contrib\EPnP\EPnP
-% addpath E:\Programme\RVC_toolboxes\robot-9.10\rvctools
-% addpath robust_pose_from_a_planar_target\rpp\rpp
-% addpath robust_pose_from_a_planar_target\rpp\rpp\util
-% addpath robust_pose_from_a_planar_target\rpp\rpp\objpose
-% startup_rvc
+addpath ..\RVC_toolboxes\contrib\rvctools\contrib\EPnP\EPnP
+addpath ..\RVC_toolboxes\robot-9.10\rvctools
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp\util
+addpath ..\RVC_toolboxes\robust_pose_from_a_planar_target\rpp\objpose
+startup_rvc
+
+%key:
+% H = homogenious transformation
+% P = homogeinous 3d point
+% _C = camera frame
+% _C_W = camera frame with respect to world frame
 
 %camera position
 cameraHeigth = 2;
@@ -39,6 +45,27 @@ N = 10; %number of iterations
 x_y_error = zeros(M,N);
 z_error = zeros(M,N);
 
+%--------------------------------------------------------------------------
+camParams1.name = 'cam1';    % camera name
+%             obj.f    = 0.015;    % focal length
+%             obj.sensorSize = [1280 1024];  % number of pixel 1x2
+%             obj.pp = obj.sensorSize/2;      % principal point 1x2
+%             obj.rho = 10e-6;
+
+camParams1.f    = [ 323.70584 324.26201 ];    % focal length (fx/rho)
+camParams1.sensorSize = [158.5*2 98.5*2];  % number of pixel 1x2
+camParams1.pp = [160.44416 100.75304];      % principal point 1x2
+camParams1.rho = 1;
+
+%distortion parameter
+camParams1.k1 = -0.43772;
+camParams1.k2 = 0.25627;
+camParams1.p1 = -0.00005;
+camParams1.p2 = -0.00102;
+camParams1.k3 = 0.0;
+camParams1.distort = true; %apply distortion
+%--------------------------------------------------------------------------
+
 for l=1 : 2
     
     for k=1 : N
@@ -53,7 +80,7 @@ for l=1 : 2
         end
 
         %camera instance
-        cam = QLPerspectiveCamera(false);
+        cam = QLPerspectiveCamera(camParams1);
         if 1
 
             %position of local NED frame in worldframe

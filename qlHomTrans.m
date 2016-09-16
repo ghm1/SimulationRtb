@@ -1,4 +1,5 @@
 function h = qlHomTrans( x, y, z, ax, ay, az)
+%Build homogenious transformation matrix by definition of rotation angles
 
 % Rotation matrix, model to camera 
 Rx = [ 1 0 0; 0 cos(ax) -sin(ax); 0 sin(ax) cos(ax)]; 
